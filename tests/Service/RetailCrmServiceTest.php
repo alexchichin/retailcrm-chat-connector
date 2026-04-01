@@ -14,8 +14,6 @@ class RetailCrmServiceTest extends TestCase
     private const EMAIL_B64  = 'YWxleC5jaGljaGluQGdtYWlsLmNvbQ==';
     private const DIALOG_ID  = '79282';
     private const ORDER_ID   = '12345';
-    private const CUSTOMER   = ['id' => 82702, 'email' => self::EMAIL, 'firstName' => 'Александр'];
-
     // -------------------------------------------------------------------------
     // extractEmailFromStart
     // -------------------------------------------------------------------------
@@ -59,49 +57,6 @@ class RetailCrmServiceTest extends TestCase
         $service = $this->makeService();
 
         $this->assertNull($service->extractEmailFromStart('/start !!!notbase64!!!'));
-    }
-
-    // -------------------------------------------------------------------------
-    // findCustomerByEmail
-    // -------------------------------------------------------------------------
-
-    public function testFindCustomerByEmailReturnsCustomer(): void
-    {
-        $service = $this->makeService(new MockHttpClient([
-            new MockResponse(json_encode([
-                'success'   => true,
-                'customers' => [self::CUSTOMER],
-            ])),
-        ]));
-
-        $customer = $service->findCustomerByEmail(self::EMAIL);
-
-        $this->assertSame(82702, $customer['id']);
-        $this->assertSame(self::EMAIL, $customer['email']);
-    }
-
-    public function testFindCustomerByEmailReturnsNullWhenNotFound(): void
-    {
-        $service = $this->makeService(new MockHttpClient([
-            new MockResponse(json_encode([
-                'success'   => true,
-                'customers' => [],
-            ])),
-        ]));
-
-        $this->assertNull($service->findCustomerByEmail(self::EMAIL));
-    }
-
-    public function testFindCustomerByEmailReturnsNullOnApiError(): void
-    {
-        $service = $this->makeService(new MockHttpClient([
-            new MockResponse(json_encode([
-                'success'  => false,
-                'errorMsg' => 'Forbidden',
-            ]), ['http_code' => 403]),
-        ]));
-
-        $this->assertNull($service->findCustomerByEmail(self::EMAIL));
     }
 
     // -------------------------------------------------------------------------

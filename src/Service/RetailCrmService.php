@@ -30,32 +30,6 @@ class RetailCrmService
         return $decoded;
     }
 
-    public function findCustomerByEmail(string $email): ?array
-    {
-        $url   = rtrim($this->retailCrmUrl, '/') . '/api/v5/customers';
-        $query = ['filter' => ['email' => $email], 'limit' => 20];
-        if ($this->retailCrmSite) {
-            $query['site'] = $this->retailCrmSite;
-        }
-
-        try {
-            $body = $this->http->request('GET', $url, [
-                'query'   => $query,
-                'headers' => ['X-API-KEY' => $this->retailCrmApiKey],
-            ])->toArray(false);
-
-            if (!($body['success'] ?? false)) {
-                $this->logger->error('RetailCRM customers search failed', ['response' => $body]);
-                return null;
-            }
-
-            return $body['customers'][0] ?? null;
-        } catch (\Throwable $e) {
-            $this->logger->error('RetailCRM customers request exception', ['exception' => $e]);
-            return null;
-        }
-    }
-
     public function getLastOrderByEmail(string $email): ?array
     {
         $url   = rtrim($this->retailCrmUrl, '/') . '/api/v5/orders';

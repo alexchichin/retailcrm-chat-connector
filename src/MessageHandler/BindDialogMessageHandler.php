@@ -29,18 +29,18 @@ class BindDialogMessageHandler
             'attempt'  => $message->attempt,
         ]);
 
-        $customer = $this->retailCrm->findCustomerByEmail($message->email);
+        $order = $this->retailCrm->getLastOrderByEmail($message->email);
 
-        if (!$customer) {
+        if (!$order) {
             if ($message->attempt >= self::MAX_ATTEMPTS) {
-                $this->logger->error('Customer not found after max attempts, giving up', [
+                $this->logger->error('Order not found after max attempts, giving up', [
                     'email'    => $message->email,
                     'dialogId' => $message->dialogId,
                 ]);
                 return;
             }
 
-            $this->logger->info('Customer not found, re-queuing', [
+            $this->logger->info('Order not found, re-queuing', [
                 'email'   => $message->email,
                 'attempt' => $message->attempt,
             ]);
@@ -50,16 +50,6 @@ class BindDialogMessageHandler
                 [new DelayStamp(self::RETRY_DELAY_MS)],
             );
 
-            return;
-        }
-
-        $order = $this->retailCrm->getLastOrderByEmail($message->email);
-
-        if (!$order) {
-            $this->logger->error('No orders found for customer', [
-                'email'      => $message->email,
-                'customerId' => $customer['id'],
-            ]);
             return;
         }
 
