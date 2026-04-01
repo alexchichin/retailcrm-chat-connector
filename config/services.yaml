@@ -13,6 +13,7 @@ parameters:
     retailcrm_api_key: '%env(RETAILCRM_API_KEY)%'
     retailcrm_site: '%env(RETAILCRM_SITE)%'
     retailcrm_dialog_field: '%env(RETAILCRM_DIALOG_FIELD)%'
+    app_base_url: '%env(APP_BASE_URL)%'
 
 services:
     # default configuration for services in *this* file
@@ -35,6 +36,13 @@ services:
         arguments:
             $mgWsUrl: '%mg_ws_url%'
             $mgWsToken: '%mg_ws_token%'
+
+    App\Command\MgBotRegisterCommand:
+        arguments:
+            $retailCrmUrl: '%retailcrm_url%'
+            $retailCrmApiKey: '%retailcrm_api_key%'
+            $retailCrmSite: '%retailcrm_site%'
+            $appBaseUrl: '%app_base_url%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

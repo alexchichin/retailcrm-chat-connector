@@ -30,19 +30,19 @@ cp .env .env.local
 
 ```dotenv
 APP_SECRET=<случайная строка>
+APP_BASE_URL=https://your-server.example.com
 
 DATABASE_URL="mysql://user:password@127.0.0.1:3306/chat_connector?serverVersion=8.0"
 MESSENGER_TRANSPORT_DSN="doctrine://default?auto_setup=1"
-
-# MG Bot — токен и URL выдаются при регистрации бота через RetailCRM API
-# POST /api/v5/integration-modules/{code}/edit → info.mgBot.token + info.mgBot.endpointUrl
-MG_WS_URL="wss://mg-s1.retailcrm.pro/api/bot/v1/ws"
-MG_WS_TOKEN="<токен из info.mgBot.token>"
 
 # RetailCRM
 RETAILCRM_URL="https://<аккаунт>.retailcrm.ru"
 RETAILCRM_API_KEY="<api-ключ>"
 RETAILCRM_SITE="<символьный код магазина>"
+
+# MG Bot — заполняется после регистрации (см. ниже)
+MG_WS_URL=
+MG_WS_TOKEN=
 ```
 
 ## База данных
@@ -54,6 +54,25 @@ mysql -u root -p -e "CREATE DATABASE chat_connector CHARACTER SET utf8mb4 COLLAT
 # Создать таблицу очереди
 bin/console messenger:setup-transports
 ```
+
+## Регистрация бота в RetailCRM
+
+Перед первым запуском нужно зарегистрировать модуль бота. Команда отправит запрос в RetailCRM и выведет токен и WS URL:
+
+```bash
+bin/console app:mg:register
+```
+
+Вывод будет примерно таким:
+
+```
+Registration successful! Add to your .env.local:
+
+MG_WS_URL="wss://mg-s1.retailcrm.pro/api/bot/v1/ws"
+MG_WS_TOKEN="5bbdfd67ed17486e32363c95..."
+```
+
+Скопируй эти значения в `.env.local`. При повторном запуске команда обновит настройки существующего модуля.
 
 ## Запуск
 
@@ -140,6 +159,7 @@ re-dispatch + DelayStamp(30 min) — повтор до 10 раз
 
 | Класс | Описание |
 |---|---|
+| `MgBotRegisterCommand` | Регистрирует бота в RetailCRM, выводит токен и WS URL |
 | `MgBotListenCommand` | WS-демон, точка входа |
 | `RetailCrmService` | HTTP-клиент к RetailCRM API |
 | `BindDialogMessage` | DTO сообщения очереди |
