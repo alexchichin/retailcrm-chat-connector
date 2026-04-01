@@ -174,9 +174,9 @@ class RetailCrmServiceTest extends TestCase
         return new RetailCrmService(
             logger:          new NullLogger(),
             http:            $http ?? new MockHttpClient(),
-            retailCrmUrl:    'https://sakurahada.retailcrm.ru',
+            retailCrmUrl:    'https://test.retailcrm.ru',
             retailCrmApiKey: 'test-api-key',
-            retailCrmSite:   'sakurahada',
+            retailCrmSite:   'test',
         );
     }
 }

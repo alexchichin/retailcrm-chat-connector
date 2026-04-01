@@ -1,4 +1,5 @@
 {
+    "name": "chat-connector",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
