@@ -13,6 +13,7 @@ class RetailCrmService
         private readonly string $retailCrmUrl,
         private readonly string $retailCrmApiKey,
         private readonly ?string $retailCrmSite,
+        private readonly string $appSecret,
     ) {}
 
     public function extractEmailFromStart(string $text): ?string
@@ -23,11 +24,34 @@ class RetailCrmService
         }
 
         $decoded = base64_decode($m[1], strict: true);
-        if ($decoded === false || !filter_var($decoded, FILTER_VALIDATE_EMAIL)) {
+        if ($decoded === false) {
             return null;
         }
 
-        return $decoded;
+        $parts = explode(':', $decoded, 2);
+        if (count($parts) !== 2) {
+            return null;
+        }
+
+        [$email, $receivedHmac] = $parts;
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+
+        $expectedHmac = substr(hash_hmac('sha256', $email, $this->appSecret), 0, 16);
+        if (!hash_equals($expectedHmac, $receivedHmac)) {
+            $this->logger->warning('Invalid HMAC in /start payload', ['email' => $email]);
+            return null;
+        }
+
+        return $email;
+    }
+
+    public function generateStartToken(string $email): string
+    {
+        $hmac = substr(hash_hmac('sha256', $email, $this->appSecret), 0, 16);
+        return base64_encode($email . ':' . $hmac);
     }
 
     public function getLastOrderByEmail(string $email): ?array

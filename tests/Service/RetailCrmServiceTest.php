@@ -11,7 +11,8 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 class RetailCrmServiceTest extends TestCase
 {
     private const EMAIL      = 'alex.chichin@gmail.com';
-    private const EMAIL_B64  = 'YWxleC5jaGljaGluQGdtYWlsLmNvbQ==';
+    private const SECRET     = 'test-secret';
+    private const EMAIL_B64  = 'YWxleC5jaGljaGluQGdtYWlsLmNvbQ=='; // старый формат без подписи
     private const DIALOG_ID  = '79282';
     private const ORDER_ID   = '12345';
     // -------------------------------------------------------------------------
@@ -21,19 +22,17 @@ class RetailCrmServiceTest extends TestCase
     public function testExtractEmailFromStartSuccess(): void
     {
         $service = $this->makeService();
+        $token   = $service->generateStartToken(self::EMAIL);
 
-        $email = $service->extractEmailFromStart('/start ' . self::EMAIL_B64);
-
-        $this->assertSame(self::EMAIL, $email);
+        $this->assertSame(self::EMAIL, $service->extractEmailFromStart('/start ' . $token));
     }
 
     public function testExtractEmailFromStartCaseInsensitive(): void
     {
         $service = $this->makeService();
+        $token   = $service->generateStartToken(self::EMAIL);
 
-        $email = $service->extractEmailFromStart('/START ' . self::EMAIL_B64);
-
-        $this->assertSame(self::EMAIL, $email);
+        $this->assertSame(self::EMAIL, $service->extractEmailFromStart('/START ' . $token));
     }
 
     public function testExtractEmailFromStartReturnNullIfNotStartCommand(): void
@@ -44,12 +43,28 @@ class RetailCrmServiceTest extends TestCase
         $this->assertNull($service->extractEmailFromStart('/help'));
     }
 
+    public function testExtractEmailFromStartReturnNullIfInvalidHmac(): void
+    {
+        $service = $this->makeService();
+        // токен сгенерирован с другим секретом
+        $fakeToken = base64_encode(self::EMAIL . ':' . 'deadbeefdeadbeef');
+
+        $this->assertNull($service->extractEmailFromStart('/start ' . $fakeToken));
+    }
+
+    public function testExtractEmailFromStartReturnNullIfNoSignature(): void
+    {
+        $service = $this->makeService();
+        // старый формат — просто base64(email) без подписи
+        $this->assertNull($service->extractEmailFromStart('/start ' . self::EMAIL_B64));
+    }
+
     public function testExtractEmailFromStartReturnNullIfNotValidEmail(): void
     {
         $service = $this->makeService();
+        $hmac    = substr(hash_hmac('sha256', 'notanemail', self::SECRET), 0, 16);
 
-        // base64 of "notanemail"
-        $this->assertNull($service->extractEmailFromStart('/start ' . base64_encode('notanemail')));
+        $this->assertNull($service->extractEmailFromStart('/start ' . base64_encode('notanemail:' . $hmac)));
     }
 
     public function testExtractEmailFromStartReturnNullIfNotBase64(): void
@@ -132,6 +147,7 @@ class RetailCrmServiceTest extends TestCase
             retailCrmUrl:    (string)getenv('RETAILCRM_URL'),
             retailCrmApiKey: (string)getenv('RETAILCRM_API_KEY'),
             retailCrmSite:   (string)getenv('RETAILCRM_SITE') ?: null,
+            appSecret:       self::SECRET,
         );
     }
 }
